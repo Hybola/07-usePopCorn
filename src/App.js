@@ -103,12 +103,14 @@ export default function App() {
   }
   useEffect(
     function () {
+      const controller = new AbortController();
       async function fetchMovies() {
         try {
           setIsLoading(true);
           setError("");
           const res = await fetch(
-            `http://www.omdbapi.com/?i=tt3896198&apikey=${KEY}&s=${query}`
+            `http://www.omdbapi.com/?i=tt3896198&apikey=${KEY}&s=${query}`,
+            { signal: controller.signal }
           );
           // if (!res.ok)
           //   throw new Error("Something went wrong with fetching movies");
@@ -116,11 +118,15 @@ export default function App() {
           if (data.Response === "False")
             throw new Error("Movie isn't found kub");
           setMovies(data.Search);
+          setError("");
         } catch (err) {
-          // console.error(err.message);
           if (err.message === "Failed to fetch")
             setError("Something went wrong");
-          else setError(err.message);
+          else if (err.name !== "AbortError") {
+            //ไม่ต้องการสนใจ "AbortError"
+            console.log(err.message);
+            setError(err.message);
+          }
         } finally {
           setIsLoading(false);
         }
@@ -130,7 +136,11 @@ export default function App() {
         setError("");
         return;
       }
+      handleCloseMovie();
       fetchMovies();
+      return function () {
+        controller.abort();
+      };
     },
     [query]
   );
@@ -283,7 +293,18 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }
-
+  //===> listening to ESC key press to close a movie detail
+  useEffect(() => {
+    function callback(e) {
+      if (e.code === "Escape") onCloseMovie();
+      // console.log("CLOSE Movie Detail");
+    }
+    document.addEventListener("keydown", callback);
+    return function () {
+      document.removeEventListener("keydown", callback);
+    };
+  }, [onCloseMovie]);
+  //===> fetch a movie detail
   useEffect(() => {
     async function getMovie() {
       setIsLoading(true);
@@ -296,6 +317,16 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     }
     getMovie();
   }, [selectedId]);
+
+  //===> Movie title
+  useEffect(() => {
+    if (!title) return;
+    document.title = `Movie| ${title}`;
+    return function () {
+      document.title = `usePopcorn`;
+      // console.log(`Clean up effect for movie ${title}`);
+    };
+  }, [title]);
   return (
     <div className="details">
       {isLoading ? (
