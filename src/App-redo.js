@@ -52,7 +52,7 @@ const average = (arr) =>
 const KEY = "20772893";
 
 export default function App() {
-  const [query, setQuery] = useState("inception");
+  const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState([]);
   const [isloading, setIsLoading] = useState(false);
@@ -65,20 +65,26 @@ export default function App() {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchMovies() {
       try {
         setIsLoading(true);
         setError("");
         const res = await fetch(
-          `http://www.omdbapi.com/?i=tt3896198&apikey=${KEY}&s=${query}`
+          `http://www.omdbapi.com/?i=tt3896198&apikey=${KEY}&s=${query}`,
+          { signal: controller.signal }
         );
         const data = await res.json();
         if (data.Response === "False") throw new Error("Movie not found kub");
         setMovies(data.Search);
+        setError("");
       } catch (err) {
         if (err.message === "Failed to fetch")
           setError("Internet connection went wrong");
-        else setError(err.message);
+        else if (err.name !== "AbortError") {
+          console.log(err.message);
+          setError(err.message);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -89,7 +95,11 @@ export default function App() {
       setError("");
       return;
     }
+    setSelectedId(null);
     fetchMovies();
+    return function () {
+      controller.abort();
+    };
   }, [query]);
 
   return (
@@ -320,6 +330,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }
+  //===>> Fetch Movie
   useEffect(() => {
     async function getMovie() {
       setIsloading(true);
@@ -342,6 +353,16 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
       document.title = "usePopcorn";
     };
   }, [title]);
+  // ===>> "ESC key"
+  useEffect(() => {
+    function callback(e) {
+      if (e.code === "Escape") onCloseMovie();
+    }
+    document.addEventListener("keydown", callback);
+    return () => {
+      document.removeEventListener("keydown", callback);
+    };
+  }, [onCloseMovie]);
 
   return (
     <div className="details">
