@@ -150,20 +150,6 @@ function NumResult({ movies }) {
     </p>
   );
 }
-
-// function ListBox({ children }) {
-//   const [isOpen1, setIsOpen1] = useState(true);
-//   return (
-//     <div className="box">
-//       <button
-//         className="btn-toggle"
-//         onClick={() => setIsOpen1((open) => !open)}>
-//         {isOpen1 ? "–" : "+"}
-//       </button>
-//       {isOpen1 && children}
-//     </div>
-//   );
-// }
 function Box({ children }) {
   const [isOpen, setIsOpen] = useState(true);
   return (
@@ -204,6 +190,21 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     Director: director,
     Genre: genre,
   } = movie;
+  // if (imdbRating > 8) return <p>Greatest ever!</p>; // early return before next 3 useEffect hooks
+  // if (imdbRating > 8) [isTop, setIsTop] = useState(true); // hook is conditionally set <<< violet hook rules
+
+  //const [isTop, setIsTop] = useState(imdbRating > 8); //imdbRating is undefine at first mount, so it's initial state is false and forever false if no set state
+  //>>> use useEffect to updata the state
+  // useEffect(()=>{
+  //   setIsTop(imdbRating>8)
+  // },[imdbRating])
+
+  // >>> better use derived state instead of useState and useEffect
+  const isTop = imdbRating > 8;
+  console.log(isTop);
+
+  // const [avgRating, setAvgRating] = useState(0);
+
   function handleAdd() {
     const newWatchedMovie = {
       imdbID: selectedId,
@@ -217,6 +218,9 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
 
     onAddWatched(newWatchedMovie);
     onCloseMovie();
+    // setAvgRating(Number(imdbRating));
+    // alert(avgRating);
+    // setAvgRating((avgRating) => (avgRating + userRating) / 2);
   }
   //===> listening to ESC key press to close a movie detail
   useEffect(() => {
@@ -275,6 +279,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
               </p>
             </div>
           </header>
+          {/* <p>{avgRating}</p> */}
           <section>
             {!isWatched ? (
               <>
