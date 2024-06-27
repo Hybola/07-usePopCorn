@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import StarRating from "./StarRating";
 
 const average = (arr) =>
@@ -140,11 +140,27 @@ function Logo() {
   );
 }
 function Search({ query, setQuery }) {
+  // useEffect(() => {
+  //   const el = document.querySelector(".search");
+  //   console.log(el);
+  //   el.focus();
+  // }, []);
+  const inputEl = useRef(null);
+
   useEffect(() => {
-    const el = document.querySelector(".search");
-    console.log(el);
-    el.focus();
-  }, []);
+    function callback(e) {
+      if (document.activeElement === inputEl.current) return;
+      if (e.code === "Enter") {
+        inputEl.current.focus();
+        setQuery("");
+      }
+    }
+    document.addEventListener("keydown", callback);
+    return () => {
+      document.removeEventListener("keydown", callback);
+    };
+  }, [setQuery]);
+
   return (
     <input
       className="search"
@@ -152,6 +168,7 @@ function Search({ query, setQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
+      ref={inputEl}
     />
   );
 }
@@ -187,10 +204,19 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   const [movie, setMovie] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
+  const countRef = useRef(0);
+  let count = 0; //normal variable is reset each re-render, it doesn't persist like useRef
+
   const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
   const watchedUserRating = watched.find(
     (movie) => movie.imdbID === selectedId
   )?.userRating;
+
+  useEffect(() => {
+    // if (userRating) countRef.current = countRef.current + 1;
+    if (userRating) countRef.current++;
+  }, [userRating]);
+
   const {
     Title: title,
     Year: year,
@@ -227,6 +253,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
       runtime: Number(runtime.split(" ").at(0)),
       imdbRating: Number(imdbRating),
       userRating,
+      RatingDecision: countRef.current,
     };
 
     onAddWatched(newWatchedMovie);
