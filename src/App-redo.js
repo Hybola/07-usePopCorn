@@ -324,10 +324,15 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   const [movie, setMovie] = useState({});
   const [isLoading, setIsloading] = useState(false);
   const [userRating, setUserRating] = useState("");
+  const countRef = useRef(0);
+
   const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
   const watchedUserRating = watched.find(
     (movie) => movie.imdbID === selectedId
   )?.userRating;
+  useEffect(() => {
+    if (userRating) countRef.current++;
+  }, [userRating]);
   const {
     Title: title,
     Year: year,
@@ -349,10 +354,12 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
       runtime: Number(runtime.split(" ").at(0)),
       imdbRating: Number(imdbRating),
       userRating,
+      ratingDecision: countRef.current,
     };
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }
+
   //===>> Fetch Movie
   useEffect(() => {
     async function getMovie() {
