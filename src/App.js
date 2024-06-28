@@ -1,16 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import StarRating from "./StarRating";
-
+import { useMovies } from "./useMovies";
+const KEY = "20772893";
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-const KEY = "20772893";
 export default function App() {
   const [query, setQuery] = useState("");
-  const [movies, setMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const { movies, isLoading, error } = useMovies(query);
   // const [watched, setWatched] = useState([]);
   const [watched, setWatched] = useState(function () {
     const storedValue = localStorage.getItem("watched");
@@ -34,49 +32,7 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("watched", JSON.stringify(watched));
   }, [watched]);
-  useEffect(
-    function () {
-      const controller = new AbortController();
-      async function fetchMovies() {
-        try {
-          setIsLoading(true);
-          setError("");
-          const res = await fetch(
-            `http://www.omdbapi.com/?i=tt3896198&apikey=${KEY}&s=${query}`,
-            { signal: controller.signal }
-          );
-          // if (!res.ok)
-          //   throw new Error("Something went wrong with fetching movies");
-          const data = await res.json();
-          if (data.Response === "False")
-            throw new Error("Movie isn't found kub");
-          setMovies(data.Search);
-          setError("");
-        } catch (err) {
-          if (err.message === "Failed to fetch")
-            setError("Something went wrong");
-          else if (err.name !== "AbortError") {
-            //ไม่ต้องการสนใจ "AbortError"
-            console.log(err.message);
-            setError(err.message);
-          }
-        } finally {
-          setIsLoading(false);
-        }
-      }
-      if (query.length < 3) {
-        setMovies([]);
-        setError("");
-        return;
-      }
-      handleCloseMovie();
-      fetchMovies();
-      return function () {
-        controller.abort();
-      };
-    },
-    [query]
-  );
+
   return (
     <>
       <NavBar>
@@ -205,7 +161,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
   const countRef = useRef(0);
-  let count = 0; //normal variable is reset each re-render, it doesn't persist like useRef
+  // let count = 0; //normal variable is reset each re-render, it doesn't persist like useRef
 
   const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
   const watchedUserRating = watched.find(
